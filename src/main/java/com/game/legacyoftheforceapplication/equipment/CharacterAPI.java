@@ -1,40 +1,33 @@
 package com.game.legacyoftheforceapplication.equipment;
 
+import lombok.AllArgsConstructor;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.game.legacyoftheforceapplication.dto.CharacterDTO;
+import com.game.legacyoftheforceapplication.utility.LegacyOfTheForceAPIConnection;
 
 @Service
+@AllArgsConstructor
 public class CharacterAPI {
 
-    public void getCharacter(Long characterId) {
+    private static final Logger logger = LogManager.getLogger(CharacterAPI.class);
+    private final LegacyOfTheForceAPIConnection connection;
 
-        HttpClient httpClient = HttpClient.newHttpClient();
-
-        String url = String.format("http://localhost:8080/api/%d", characterId);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("Content-Type", "application/json")
-                .GET()
-                .build();
-
+    public CharacterDTO getCharacterProfile(Long characterId) {
+        String response = connection.get(characterId);
+        ObjectMapper objectMapper = new ObjectMapper();
+        CharacterDTO DTO;
         try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            // Process the response from Service B
-            int statusCode = response.statusCode();
-            String responseBody = response.body();
-
-            System.out.println("Response status code: " + statusCode);
-            System.out.println("Response body: " + responseBody);
-        } catch(IOException | InterruptedException e) {
-            e.printStackTrace();
+            DTO = objectMapper.readValue(response, CharacterDTO.class);
+        } catch (JsonProcessingException e) {
+            logger.error("Could not parse response ito JSON object");
+            throw new RuntimeException(e);
         }
+        return DTO;
     }
 
 }
